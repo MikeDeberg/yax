@@ -7,7 +7,7 @@ class Artifact(Type):
     final_user_output = False
 
     def _get_complete_flag_path(self):
-        os.path.join(self.data_dir, '.complete')
+        return os.path.join(self.data_dir, '.complete')
 
     @property
     def is_complete(self):
@@ -15,10 +15,11 @@ class Artifact(Type):
 
     @classmethod
     def declare(cls, dir_):
-        instance = cls.__new__()
+        instance = cls.__new__(cls)
         instance.data_dir = dir_
         instance.__init__(completed=instance.is_complete)
-
+        return instance
+        
     def __init__(self, completed):
         pass
 

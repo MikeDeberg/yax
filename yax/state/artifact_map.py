@@ -33,11 +33,11 @@ class ArtifactMap:
     def get_params(self, run_id, node):
         input_params = node.get_input_params()
         params_names = ["_".join([node.name, key]) for key in input_params]
-        self._select_all_from('Run', run_id)
+        self._select_all_from('Run', {'id': run_id})
 
         sql = """
             SELECT %s FROM Run WHERE id = ?
-        """ % ','.join(details)
+        """ % ','.join(params_names)
         with auto_rollback(self.conn) as c:
             c.execute(sql, (run_id,))
             return dict(zip(params_names, c.fetchone()))
@@ -91,7 +91,7 @@ class ArtifactMap:
         return run_id
 
     def resolve_run_key(self, run_key):
-        return self._select_all_from('Run', {'run_key': run_key})[0]
+        return self._select_all_from('Run', {'run_key': run_key})[0][0]
 
     def get_artifact_paths(self, run_id):
         sql = '''
@@ -102,12 +102,12 @@ class ArtifactMap:
             WHERE
                 AR.run_id = ?
         '''
-
+        print(run_id)
         with auto_rollback(self.conn) as c:
             c.execute(sql, (run_id,))
             return dict(c.fetchall())
 
-    def get_details(run_id):
+    def get_details(self, run_id):
         details = sorted([x if x == 'run_key' else 'details_' + x
                           for x in self.graph.details])
         sql = """
@@ -116,13 +116,13 @@ class ArtifactMap:
         with auto_rollback(self.conn) as c:
             c.execute(sql, (run_id,))
 
-        details_ = []
-        for detail in details:
-            if detail.startswith("details_"):
-                detail = detail[len("details_"):]
-            deatils_.append(detail)
+            details_ = []
+            for detail in details:
+                if detail.startswith("details_"):
+                    detail = detail[len("details_"):]
+                details_.append(detail)
 
-        return dict(zip(details_, c.fetchone()))
+            return dict(zip(details_, c.fetchone()))
 
     def _flatten_config(self, config):
         results = {}

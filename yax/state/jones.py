@@ -5,7 +5,7 @@ import tempfile
 
 from yax.state.exe import ExeGraph
 from yax.state.artifact_map import ArtifactMap
-
+from yax.state.type import Artifact
 
 class Indiana:
     DATA_DIR_NAME = '.yax'
@@ -83,11 +83,11 @@ class Indiana:
             if all([Artifact.declare(art_fps[o]) for o in node.output_map]):
                 continue
             self._affect_module_call(node, run_id, art_fps)
-
+ 
     def _affect_module_call(self, node, run_id, art_fps):
         details = self.map.get_details(run_id)
         outputs = tuple(Artifact.declare(art_fps[k]) for k in node.output_map)
-        input_artifacts = {k: Artifacts.declare(art_fps[k]) \
+        input_artifacts = {k: Artifact.declare(art_fps[k]) \
                            for k in node.input_map}
         input_params = self.map.get_params(run_id, node)
 
