@@ -30,8 +30,17 @@ class ArtifactMap:
         if not db_exists:
             self._init_database()
 
-    def get_artifact(self, artifact_name, run_key):
-        pass
+    def get_params(self, run_id, node):
+        input_params = node.get_input_params()
+        params_names = ["_".join([node.name, key]) for key in input_params]
+        self._select_all_from('Run', run_id)
+
+        sql = """
+            SELECT %s FROM Run WHERE id = ?
+        """ % ','.join(details)
+        with auto_rollback(self.conn) as c:
+            c.execute(sql, (run_id,))
+            return dict(zip(params_names, c.fetchone()))
 
     def declare_artifacts(self, config, run_id):
         for bound_artifact, nodes in self.graph.artifact_dependencies.items():
@@ -80,6 +89,40 @@ class ArtifactMap:
 
         print(run_id, run_key)
         return run_id
+
+    def resolve_run_key(self, run_key):
+        return self._select_all_from('Run', {'run_key': run_key})[0]
+
+    def get_artifact_paths(self, run_id):
+        sql = '''
+            SELECT A.name, A.path FROM
+                Artifact AS A
+            INNER JOIN
+                Artifact_Run AS AR ON A.id = AR.artifact_id
+            WHERE
+                AR.run_id = ?
+        '''
+
+        with auto_rollback(self.conn) as c:
+            c.execute(sql, (run_id,))
+            return dict(c.fetchall())
+
+    def get_details(run_id):
+        details = sorted([x if x == 'run_key' else 'details_' + x
+                          for x in self.graph.details])
+        sql = """
+            SELECT %s FROM Run WHERE id = ?
+        """ % ','.join(details)
+        with auto_rollback(self.conn) as c:
+            c.execute(sql, (run_id,))
+
+        details_ = []
+        for detail in details:
+            if detail.startswith("details_"):
+                detail = detail[len("details_"):]
+            deatils_.append(detail)
+
+        return dict(zip(details_, c.fetchone()))
 
     def _flatten_config(self, config):
         results = {}

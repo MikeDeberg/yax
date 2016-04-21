@@ -14,14 +14,16 @@ class Artifact(Type):
         return os.path.isfile(self._get_complete_flag_path())
 
     @classmethod
-    def declare(cls, dir_, id_):
+    def declare(cls, dir_):
         instance = cls.__new__()
         instance.data_dir = dir_
-        instance.module_id = id_
         instance.__init__(completed=instance.is_complete)
 
     def __init__(self, completed):
         pass
+
+    def __bool__(self):
+        return self.is_complete
 
     def complete(self):
         self.__complete__()

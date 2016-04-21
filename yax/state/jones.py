@@ -1,6 +1,7 @@
 import configparser
 import os
 import shutil
+import tempfile
 
 from yax.state.exe import ExeGraph
 from yax.state.artifact_map import ArtifactMap
@@ -73,10 +74,33 @@ class Indiana:
         config = self.read_config(config)
         run_id = self.map.create_run(config)
         self.map.declare_artifacts(config, run_id)
+        return section
+
+    def engage(self, run_key):
+        run_id = self.map.resolve_run_key(run_key)
+        art_fps = self.map.get_artifact_paths(run_id)
+
+        for node in self.graph:
+            if all([Artifact.declare(art_fps[o]) for o in node.output_map]):
+                continue
+            self._affect_module_call(node, run_id, art_fps)
+
+    def _affect_module_call(self, node, run_id, art_fps):
+        details = self.map.get_details(run_id)
+        outputs = tuple(Artifact.declare(art_fps[k]) for k in node.output_map)
+        input_artifacts = {k: Artifacts.declare(art_fps[k]) \
+                           for k in node.input_map}
+        input_params = self.map.get_params(run_id, node)
+
+        with tempfile.TemporaryDirectory(dir=self.working_dir) as working_dir:
+            results = node(working_dir, outputs, details, input_artifacts,
+                           input_params)
+
 
     def read_config(self, config_fp):
         config = configparser.ConfigParser()
         config.read(config_fp)
+        print(dict(config['DEFAULT']))
         # Verify all sections are preset
         config_sections_list = config.sections()
         config_sections = set(config_sections_list)
@@ -104,7 +128,7 @@ class Indiana:
         for node in self.graph:
             config_[node.name] = self._validate_section(config[node.name],
                                                         node)
-
+        print(config_)
         return config_
 
     def _validate_section(self, section_config, node):
@@ -127,11 +151,6 @@ class Indiana:
         section = {}
         for key, type_ in node.get_input_params().items():
             section[key] = type_().from_string(section_config[key])
-        return section
-
-    def engage(self, config):
-        self.prepare(self, config)
-        raise NotImplementedError("To be done.")
 
     def write_config(self, run_key):
         fp = os.path.join(self.root_dir, '%s.ini' % run_key)
