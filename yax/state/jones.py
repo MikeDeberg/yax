@@ -74,7 +74,6 @@ class Indiana:
         config = self.read_config(config)
         run_id = self.map.create_run(config)
         self.map.declare_artifacts(config, run_id)
-        return section
 
     def engage(self, run_key):
         run_id = self.map.resolve_run_key(run_key)
@@ -151,6 +150,7 @@ class Indiana:
         section = {}
         for key, type_ in node.get_input_params().items():
             section[key] = type_().from_string(section_config[key])
+        return section
 
     def write_config(self, run_key):
         fp = os.path.join(self.root_dir, '%s.ini' % run_key)

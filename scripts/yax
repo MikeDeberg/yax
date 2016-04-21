@@ -59,10 +59,10 @@ def prep(run_config):
 
 
 @cli.command("engage", help='Start a run.')
-@run_configuration_option()
-def engage(config, run_config):
+@click.option('-r', '--run-key', default=None)
+def engage(run_key):
     indiana = Indiana(os.getcwd())
-    indiana.engage()
+    indiana.engage(run_key)
 
 
 if __name__ == "__main__":
