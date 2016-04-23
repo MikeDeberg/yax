@@ -80,26 +80,40 @@ class Indiana:
         art_fps = self.map.get_artifact_paths(run_id)
 
         for node in self.graph:
-            if all([Artifact.declare(art_fps[o]) for o in node.output_map]):
+            if all([Artifact.declare(art_fps[o], None) for o in node.output_map]):
                 continue
             self._affect_module_call(node, run_id, art_fps)
 
+        for name, art_fp in art_fps.items():
+            artifact = Artifact.declare(art_fp, None)
+            if artifact.is_final_output():
+                shutil.copytree(artifact.data_dir,
+                                os.path.join(self.root_dir, run_key, name))
+
+
     def _affect_module_call(self, node, run_id, art_fps):
         details = self.map.get_details(run_id)
-        outputs = tuple(Artifact.declare(art_fps[k]) for k in node.output_map)
-        input_artifacts = {k: Artifact.declare(art_fps[k]) \
-                           for k in node.input_map}
+
+        outputs = []
+        for key, cls in zip(node.output_map, node.get_output_artifacts()):
+            outputs.append(cls.declare(art_fps[key], node.name))
+        outputs = tuple(outputs)
+
+        param_to_class = node.get_input_artifacts()
+        input_artifacts = {}
+        for key, param in node.input_map.items():
+            input_artifacts[param] = \
+                param_to_class[param].declare(art_fps[key], node.name)
+
         input_params = self.map.get_params(run_id, node)
 
         with tempfile.TemporaryDirectory(dir=self.working_dir) as working_dir:
             results = node(working_dir, outputs, details, input_artifacts,
                            input_params)
 
-
     def read_config(self, config_fp):
         config = configparser.ConfigParser()
         config.read(config_fp)
-        print(dict(config['DEFAULT']))
         # Verify all sections are preset
         config_sections_list = config.sections()
         config_sections = set(config_sections_list)
@@ -127,7 +141,6 @@ class Indiana:
         for node in self.graph:
             config_[node.name] = self._validate_section(config[node.name],
                                                         node)
-        print(config_)
         return config_
 
     def _validate_section(self, section_config, node):

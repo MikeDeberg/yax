@@ -59,18 +59,15 @@ class ExeNode:
             'details': details
         }
 
-        input_.update({self.input_map[k]:v for k, v in input_artifacts.items()})
+        input_.update(input_artifacts)
         input_.update(input_params)
-        print(input_)
         outputs = self.module(**input_)
-        print(outputs)
         if type(outputs) is not tuple:
             outputs = (outputs,)
 
         for output in outputs:
-            print(output)
             output.complete()
-
+        return outputs
 
 class ExeGraph:
     @classmethod

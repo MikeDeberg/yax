@@ -102,7 +102,6 @@ class ArtifactMap:
             WHERE
                 AR.run_id = ?
         '''
-        print(run_id)
         with auto_rollback(self.conn) as c:
             c.execute(sql, (run_id,))
             return dict(c.fetchall())
