@@ -19,7 +19,7 @@ class Artifact(Type):
         instance.data_dir = dir_
         instance.__init__(completed=instance.is_complete)
         return instance
-        
+
     def __init__(self, completed):
         pass
 
@@ -28,7 +28,8 @@ class Artifact(Type):
 
     def complete(self):
         self.__complete__()
-        os.utime(self._get_complete_flag_path(), None)
+        print(self._get_complete_flag_path())
+        return os.path.isfile(self._get_complete_flag_path())
 
     def __complete__(self):
         pass

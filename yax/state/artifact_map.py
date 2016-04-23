@@ -31,7 +31,7 @@ class ArtifactMap:
             self._init_database()
 
     def get_params(self, run_id, node):
-        input_params = node.get_input_params()
+        input_params = node.get_input_params().keys()
         params_names = ["_".join([node.name, key]) for key in input_params]
         self._select_all_from('Run', {'id': run_id})
 
@@ -40,7 +40,7 @@ class ArtifactMap:
         """ % ','.join(params_names)
         with auto_rollback(self.conn) as c:
             c.execute(sql, (run_id,))
-            return dict(zip(params_names, c.fetchone()))
+            return dict(zip(input_params, c.fetchone()))
 
     def declare_artifacts(self, config, run_id):
         for bound_artifact, nodes in self.graph.artifact_dependencies.items():

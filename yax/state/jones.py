@@ -83,7 +83,7 @@ class Indiana:
             if all([Artifact.declare(art_fps[o]) for o in node.output_map]):
                 continue
             self._affect_module_call(node, run_id, art_fps)
- 
+
     def _affect_module_call(self, node, run_id, art_fps):
         details = self.map.get_details(run_id)
         outputs = tuple(Artifact.declare(art_fps[k]) for k in node.output_map)
