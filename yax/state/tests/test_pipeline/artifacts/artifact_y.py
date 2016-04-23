@@ -15,7 +15,7 @@ class ArtifactY(Artifact):
             self.read_text()
 
     def read_text(self):
-        with open(os.path.join(self.data_dir, "artifact_b.txt"), 'r') as fh:
+        with open(os.path.join(self.data_dir, "artifact_y.txt"), 'r') as fh:
             artifact_lines = fh.read().splitlines()
 
         self.text = artifact_lines[1]
@@ -27,7 +27,7 @@ class ArtifactY(Artifact):
         self.number_float = float(artifact_lines[-1])
 
     def __complete__(self):
-        with open(os.path.join(self.data_dir, "artifact_b.txt"), 'w') as fh:
+        with open(os.path.join(self.data_dir, "artifact_y.txt"), 'w') as fh:
             fh.write("\n".join([self.module_id, self.text * self.number_int,
                                 str(self.number_float),
                                 str(self.boolean_val)]))
