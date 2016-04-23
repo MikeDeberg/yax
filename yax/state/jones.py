@@ -70,10 +70,31 @@ class Indiana:
     def init(self, run_key):
         self.write_config(run_key)
 
-    def prepare(self, config):
+    def prepare(self, run_key):
+        """Prepare a run
+
+        Looks for a file in the root directory which matches `run_key`.ini
+        The config will be validated and then any corresponding aritfacts
+        will be associated or declared with a run.
+
+        Paramters
+        ---------
+        run_key : str
+            The run key to use
+
+        Returns
+        -------
+        None
+
+        """
+        config = os.path.join(self.root_dir, run_key + '.ini')
+        if not os.path.isfile(config):
+            raise ValueError("File `%s.ini` does not exist." % run_key)
+
         config = self.read_config(config)
-        run_id = self.map.create_run(config)
+        run_id, existing_run_key = self.map.create_run(config)
         self.map.declare_artifacts(config, run_id)
+        return existing_run_key
 
     def engage(self, run_key):
         run_id = self.map.resolve_run_key(run_key)
@@ -135,8 +156,8 @@ class Indiana:
             type_ = value
             if type(value) is tuple:
                 type_, _ = value
-            config_['details'][key] =\
-                type_().from_string(config['details'][key])
+            self._copy_converted_config_value(type_, config['details'],
+                                              config_['details'], key)
 
         for node in self.graph:
             config_[node.name] = self._validate_section(config[node.name],
@@ -162,20 +183,21 @@ class Indiana:
 
         section = {}
         for key, type_ in node.get_input_params().items():
-            section[key] = type_().from_string(section_config[key])
+            self._copy_converted_config_value(type_, section_config, section,
+                                              key)
         return section
 
     def write_config(self, run_key):
         fp = os.path.join(self.root_dir, '%s.ini' % run_key)
         config = configparser.ConfigParser()
 
-        config['details'] = {'run_key': run_key}
+        config['details'] = {}
         for key, value in self.graph.details.items():
             default = ''
             if type(value) is tuple:
                 _, default = value
             config['details'][key] = str(default)
-
+        config['details']['run_key'] = run_key
         for node in self.graph:
             section = {}
             for key in node.get_input_params():
@@ -187,3 +209,10 @@ class Indiana:
 
         with open(fp, mode='w') as fh:
             config.write(fh)
+
+    def _copy_converted_config_value(self, type_, from_, into, key):
+        try:
+            into[key] = type_().from_string(from_[key])
+        except ValueError:
+            raise ValueError("Field %r must be %s."
+                             % (key, type_.__name__.lower()))

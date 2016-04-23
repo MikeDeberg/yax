@@ -52,9 +52,7 @@ class ArtifactMap:
             else:
                 for aid, rid in rows:
                     if rid == run_id:
-                        print("NOT Adding : " + str(aid))
                         continue
-                    print("Adding : " + str(aid))
                     self._insert_into(
                         'Artifact_Run',
                         {'run_id': run_id, 'artifact_id': aid})
@@ -87,11 +85,14 @@ class ArtifactMap:
             run_id = row[0]
             run_key = row[1]
 
-        print(run_id, run_key)
-        return run_id
+        return run_id, run_key
 
     def resolve_run_key(self, run_key):
-        return self._select_all_from('Run', {'run_key': run_key})[0][0]
+        rows = self._select_all_from('Run', {'run_key': run_key})
+        if not rows:
+            raise ValueError("Run key %r does not exist or has not"
+                             " been prepared." % run_key)
+        return rows[0][0]
 
     def get_artifact_paths(self, run_id):
         sql = '''
